@@ -35,8 +35,7 @@ namespace Pacco.Services.Orders.Api
                         .Get<GetOrder, OrderDto>("orders/{orderId}")
                         .Get<GetOrders, IEnumerable<OrderDto>>("orders")
                         .Delete<DeleteOrder>("orders/{orderId}")
-                        .Post<CreateOrder>("orders",
-                            afterDispatch: (cmd, ctx) => ctx.Response.Created($"orders/{cmd.OrderId}"))
+                        .Post<CreateOrder>("orders", afterDispatch: (cmd, ctx) => ctx.Response.Created($"orders/{cmd.OrderId}"))
                         .Post<AddParcelToOrder>("orders/{orderId}/parcels/{parcelId}")
                         .Delete<DeleteParcelFromOrder>("orders/{orderId}/parcels/{parcelId}")
                         .Post<AssignVehicleToOrder>("orders/{orderId}/vehicles/{vehicleId}")))

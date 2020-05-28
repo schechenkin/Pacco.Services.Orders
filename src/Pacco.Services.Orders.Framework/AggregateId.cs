@@ -1,7 +1,7 @@
 using System;
-using Pacco.Services.Orders.Core.Exceptions;
+using Pacco.Services.Orders.Framework.Exceptions;
 
-namespace Pacco.Services.Orders.Core.Entities
+namespace Pacco.Services.Orders.Framework
 {
     public class AggregateId : IEquatable<AggregateId>
     {

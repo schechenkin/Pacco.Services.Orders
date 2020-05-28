@@ -4,23 +4,25 @@ using Pacco.Services.Orders.Application.Events;
 using Pacco.Services.Orders.Application.Exceptions;
 using Pacco.Services.Orders.Application.Services;
 using Pacco.Services.Orders.Application.Services.Clients;
+using Pacco.Services.Orders.Core.Entities;
 using Pacco.Services.Orders.Core.Repositories;
+using Pacco.Services.Orders.Framework;
 
 namespace Pacco.Services.Orders.Application.Commands.Handlers
 {
     public class AssignVehicleToOrderHandler : ICommandHandler<AssignVehicleToOrder>
     {
-        private readonly IOrderRepository _orderRepository;
+        private readonly IAggregateStore _aggregateStore;
         private readonly IPricingServiceClient _pricingServiceClient;
         private readonly IVehiclesServiceClient _vehiclesServiceClient;
         private readonly IMessageBroker _messageBroker;
         private readonly IAppContext _appContext;
 
-        public AssignVehicleToOrderHandler(IOrderRepository orderRepository,
+        public AssignVehicleToOrderHandler(IAggregateStore aggregateStore,
             IPricingServiceClient pricingServiceClient, IVehiclesServiceClient vehiclesServiceClient,
             IMessageBroker messageBroker, IAppContext appContext)
         {
-            _orderRepository = orderRepository;
+            _aggregateStore = aggregateStore;
             _pricingServiceClient = pricingServiceClient;
             _vehiclesServiceClient = vehiclesServiceClient;
             _messageBroker = messageBroker;
@@ -29,8 +31,8 @@ namespace Pacco.Services.Orders.Application.Commands.Handlers
 
         public async Task HandleAsync(AssignVehicleToOrder command)
         {
-            var order = await _orderRepository.GetAsync(command.OrderId);
-            if (order is null)
+            var order = await _aggregateStore.Load<Order>(command.OrderId);
+            if (order is null || order.Deleted)
             {
                 throw new OrderNotFoundException(command.OrderId);
             }
@@ -61,7 +63,7 @@ namespace Pacco.Services.Orders.Application.Commands.Handlers
             order.SetVehicle(command.VehicleId);
             order.SetTotalPrice(pricing.OrderDiscountPrice);
             order.SetDeliveryDate(command.DeliveryDate);
-            await _orderRepository.UpdateAsync(order);
+            await _aggregateStore.Save(order);
             await _messageBroker.PublishAsync(new VehicleAssignedToOrder(command.OrderId, command.VehicleId));
         }
     }

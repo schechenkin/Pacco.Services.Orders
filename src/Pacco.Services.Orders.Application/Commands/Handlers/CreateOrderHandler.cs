@@ -5,22 +5,22 @@ using Pacco.Services.Orders.Application.Services;
 using Pacco.Services.Orders.Core.Entities;
 using Pacco.Services.Orders.Core.Exceptions;
 using Pacco.Services.Orders.Core.Repositories;
+using Pacco.Services.Orders.Framework;
 
 namespace Pacco.Services.Orders.Application.Commands.Handlers
 {
     public class CreateOrderHandler : ICommandHandler<CreateOrder>
     {
-        private readonly IOrderRepository _orderRepository;
-        private readonly ICustomerRepository _customerRepository;
+        private readonly IAggregateStore _aggregateStore;
+        //private readonly ICustomerRepository _customerRepository;
         private readonly IMessageBroker _messageBroker;
         private readonly IEventMapper _eventMapper;
         private readonly IDateTimeProvider _dateTimeProvider;
 
-        public CreateOrderHandler(IOrderRepository orderRepository, ICustomerRepository customerRepository,
+        public CreateOrderHandler(IAggregateStore aggregateStore,
             IMessageBroker messageBroker, IEventMapper eventMapper, IDateTimeProvider dateTimeProvider)
         {
-            _orderRepository = orderRepository;
-            _customerRepository = customerRepository;
+            _aggregateStore = aggregateStore;
             _messageBroker = messageBroker;
             _eventMapper = eventMapper;
             _dateTimeProvider = dateTimeProvider;
@@ -28,13 +28,13 @@ namespace Pacco.Services.Orders.Application.Commands.Handlers
 
         public async Task HandleAsync(CreateOrder command)
         {
-            if (!(await _customerRepository.ExistsAsync(command.CustomerId)))
+            /*if (!(await _customerRepository.ExistsAsync(command.CustomerId)))
             {
                 throw new CustomerNotFoundException(command.CustomerId);
-            }
+            }*/
 
-            var order = Order.Create(command.OrderId, command.CustomerId, OrderStatus.New, _dateTimeProvider.Now);
-            await _orderRepository.AddAsync(order);
+            var order = Order.Create(command.OrderId, command.CustomerId, _dateTimeProvider.Now);
+            await _aggregateStore.Save(order);
             var events = _eventMapper.MapAll(order.Events);
             await _messageBroker.PublishAsync(events.ToArray());
         }

@@ -26,6 +26,7 @@
         <PackageReference Include="Convey.Tracing.Jaeger.RabbitMQ" Version="0.4.*" />
         <PackageReference Include="Convey.WebApi.CQRS" Version="0.4.*" />
         <PackageReference Include="Convey.WebApi.Swagger" Version="0.4.*" />
+        <PackageReference Include="EventStore.Client" Version="5.0.8" />
     </ItemGroup>
 
     <ItemGroup>

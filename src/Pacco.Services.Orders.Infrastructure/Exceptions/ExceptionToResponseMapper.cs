@@ -5,6 +5,7 @@ using Convey;
 using Convey.WebApi.Exceptions;
 using Pacco.Services.Orders.Application.Exceptions;
 using Pacco.Services.Orders.Core.Exceptions;
+using Pacco.Services.Orders.Framework.Exceptions;
 
 namespace Pacco.Services.Orders.Infrastructure.Exceptions
 {

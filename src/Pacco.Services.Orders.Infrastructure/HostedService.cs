@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using EventStore.ClientAPI;
 using Microsoft.Extensions.Hosting;
 
-namespace Pacco.Services.Orders.Infrastructure.EvenStore
+namespace Pacco.Services.Orders.Infrastructure
 {
     public class HostedService : IHostedService
     {

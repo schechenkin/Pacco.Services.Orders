@@ -24,9 +24,12 @@ using Convey.Tracing.Jaeger.RabbitMQ;
 using Convey.WebApi;
 using Convey.WebApi.CQRS;
 using Convey.WebApi.Swagger;
+using EventStore.ClientAPI;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 using Pacco.Services.Orders.Application;
 using Pacco.Services.Orders.Application.Commands;
@@ -34,12 +37,12 @@ using Pacco.Services.Orders.Application.Events.External;
 using Pacco.Services.Orders.Application.Services;
 using Pacco.Services.Orders.Application.Services.Clients;
 using Pacco.Services.Orders.Core.Repositories;
+using Pacco.Services.Orders.Framework;
 using Pacco.Services.Orders.Infrastructure.Contexts;
 using Pacco.Services.Orders.Infrastructure.Decorators;
+using Pacco.Services.Orders.Infrastructure.EvenStore;
 using Pacco.Services.Orders.Infrastructure.Exceptions;
 using Pacco.Services.Orders.Infrastructure.Logging;
-using Pacco.Services.Orders.Infrastructure.Mongo.Documents;
-using Pacco.Services.Orders.Infrastructure.Mongo.Repositories;
 using Pacco.Services.Orders.Infrastructure.Services;
 using Pacco.Services.Orders.Infrastructure.Services.Clients;
 
@@ -51,8 +54,8 @@ namespace Pacco.Services.Orders.Infrastructure
         {
             builder.Services.AddSingleton<IEventMapper, EventMapper>();
             builder.Services.AddTransient<IMessageBroker, MessageBroker>();
-            builder.Services.AddTransient<ICustomerRepository, CustomerMongoRepository>();
-            builder.Services.AddTransient<IOrderRepository, OrderMongoRepository>();
+            //builder.Services.AddTransient<ICustomerRepository, CustomerMongoRepository>();
+            //builder.Services.AddTransient<IOrderRepository, OrderMongoRepository>();
             builder.Services.AddSingleton<IDateTimeProvider, DateTimeProvider>();
             builder.Services.AddTransient<IParcelsServiceClient, ParcelsServiceClient>();
             builder.Services.AddTransient<IPricingServiceClient, PricingServiceClient>();
@@ -61,6 +64,10 @@ namespace Pacco.Services.Orders.Infrastructure
             builder.Services.AddTransient(ctx => ctx.GetRequiredService<IAppContextFactory>().Create());
             builder.Services.TryDecorate(typeof(ICommandHandler<>), typeof(OutboxCommandHandlerDecorator<>));
             builder.Services.TryDecorate(typeof(IEventHandler<>), typeof(OutboxEventHandlerDecorator<>));
+
+            ConfigureEventStore(builder);
+            
+            builder.Services.AddSingleton<IHostedService, HostedService>();
 
             return builder
                 .AddErrorHandler<ExceptionToResponseMapper>()
@@ -77,10 +84,24 @@ namespace Pacco.Services.Orders.Infrastructure
                 .AddMetrics()
                 .AddJaeger()
                 .AddHandlersLogging()
-                .AddMongoRepository<CustomerDocument, Guid>("customers")
-                .AddMongoRepository<OrderDocument, Guid>("orders")
+                //.AddMongoRepository<CustomerDocument, Guid>("customers")
+                //.AddMongoRepository<OrderDocument, Guid>("orders")
                 .AddWebApiSwaggerDocs()
                 .AddSecurity();
+        }
+
+        private static void ConfigureEventStore(IConveyBuilder builder)
+        {
+            builder.Services.AddSingleton<IEventStoreConnection>(ctx =>
+            {
+                var configuration = ctx.GetRequiredService<IConfiguration>();
+                return EventStoreConnection.Create(
+                    configuration["eventStore:connectionString"],
+                    ConnectionSettings.Create().KeepReconnecting(),
+                    "order-service");
+            });
+            
+            builder.Services.AddSingleton<IAggregateStore>(ctx => new EsAggregateStore(ctx.GetRequiredService<IEventStoreConnection>()));
         }
 
         public static IApplicationBuilder UseInfrastructure(this IApplicationBuilder app)

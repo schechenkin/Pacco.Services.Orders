@@ -1,5 +1,6 @@
 using System;
 using Pacco.Services.Orders.Core.Entities;
+using Pacco.Services.Orders.Framework.Exceptions;
 
 namespace Pacco.Services.Orders.Core.Exceptions
 {

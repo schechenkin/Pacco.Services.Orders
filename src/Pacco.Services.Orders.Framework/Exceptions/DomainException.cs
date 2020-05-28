@@ -1,6 +1,6 @@
 using System;
 
-namespace Pacco.Services.Orders.Core.Exceptions
+namespace Pacco.Services.Orders.Framework.Exceptions
 {
     public abstract class DomainException : Exception
     {
